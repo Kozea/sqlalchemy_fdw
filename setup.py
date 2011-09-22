@@ -4,7 +4,7 @@ setup(
  version='0.0.1',
  author='Kozea',
  license='BSD',
- install_requires='sqlalchemy>=0.7',
+ install_requires=['sqlalchemy>=0.7', 'psycopg2'],
  entry_points={
      'sqlalchemy.dialects': ['pgfdw = sqlalchemy_fdw.dialect:dialect']
  },
