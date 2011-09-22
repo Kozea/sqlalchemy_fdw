@@ -1,4 +1,4 @@
-sqlalchemy_fdw is a postgresql dialect for sqlalchmy adding support for foreign
+sqlalchemy_fdw is a postgresql dialect for sqlalchemy adding support for foreign
 data wrappers.
 
 Installation
