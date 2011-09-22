@@ -26,7 +26,13 @@ class PGDDLCompilerFdw(PGDDLCompiler):
 
 
 class PGDialectFdw(PGDialect_psycopg2):
-    """An sqldialect based on psyopg2 for managing foreign tables"""
+    """An sqldialect based on psyopg2 for managing foreign tables
+
+    To use it, simply use pgfdw in the connection string::
+
+        create_engine('pgfdw://user:password@localhost:5432/dbname')
+
+    """
 
     ddl_compiler = PGDDLCompilerFdw
 
