@@ -3,7 +3,7 @@
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.dialects.postgresql.base import PGDDLCompiler
 from sqlalchemy.engine import reflection
-from sqlalchemy import sql, types as sqltypes
+from sqlalchemy import sql, types as sqltypes, exc
 from .util import sql_options
 
 
@@ -77,5 +77,45 @@ class PGDialectFdw(PGDialect_psycopg2):
             )
         )
         return [row[0] for row in result]
+
+
+    @reflection.cache
+    def get_table_oid(self, connection, table_name, schema=None, **kw):
+        """Fetch the oid for schema.table_name.
+
+        Several reflection methods require the table oid.  The idea for using
+        this method is that it can be fetched one time and cached for
+        subsequent calls.
+
+        """
+        table_oid = None
+        if schema is not None:
+            schema_where_clause = "n.nspname = :schema"
+        else:
+            schema_where_clause = "pg_catalog.pg_table_is_visible(c.oid)"
+        query = """
+            SELECT c.oid
+            FROM pg_catalog.pg_class c
+            LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+            WHERE (%s)
+            AND c.relname = :table_name AND c.relkind in ('r','v', 'f')
+        """ % schema_where_clause
+        # Since we're binding to unicode, table_name and schema_name must be
+        # unicode.
+        table_name = unicode(table_name)
+        if schema is not None:
+            schema = unicode(schema)
+        s = sql.text(query, bindparams=[
+            sql.bindparam('table_name', type_=sqltypes.Unicode),
+            sql.bindparam('schema', type_=sqltypes.Unicode)
+            ],
+            typemap={'oid':sqltypes.Integer}
+        )
+        c = connection.execute(s, table_name=table_name, schema=schema)
+        table_oid = c.scalar()
+        if table_oid is None:
+            raise exc.NoSuchTableError(table_name)
+        return table_oid
+
 
 dialect = PGDialectFdw
