@@ -2,6 +2,8 @@
 
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.dialects.postgresql.base import PGDDLCompiler
+from sqlalchemy.engine import reflection
+from sqlalchemy import sql, types as sqltypes
 from .util import sql_options
 
 
@@ -35,5 +37,45 @@ class PGDialectFdw(PGDialect_psycopg2):
     """
 
     ddl_compiler = PGDDLCompilerFdw
+
+    @reflection.cache
+    def get_primary_keys(self, connection, table_name, schema=None, **kw):
+        if schema is not None:
+            current_schema = schema
+        else:
+            current_schema = self.default_schema_name
+        PK_SQL = """
+            SELECT cu.column_name
+            FROM information_schema.table_constraints tc
+            INNER JOIN information_schema.key_column_usage cu
+                on cu.constraint_name = tc.constraint_name and
+                    cu.table_name = tc.table_name and
+                    cu.table_schema = tc.table_schema
+            WHERE cu.table_name = :table_name and
+                    constraint_type = 'PRIMARY KEY'
+                    and cu.table_schema = :schema;
+        """
+        t = sql.text(PK_SQL, typemap={'attname':sqltypes.Unicode})
+        c = connection.execute(t, table_name=table_name, schema=current_schema)
+        primary_keys = [r[0] for r in c.fetchall()]
+        return primary_keys
+
+    @reflection.cache
+    def get_table_names(self, connection, schema=None, **kw):
+        if schema is not None:
+            current_schema = schema
+        else:
+            current_schema = self.default_schema_name
+
+        result = connection.execute(
+            sql.text(u"SELECT relname FROM pg_class c "
+                "WHERE relkind in ('r', 'f') "
+                "AND '%s' = (select nspname from pg_namespace n "
+                "where n.oid = c.relnamespace) " %
+                current_schema,
+                typemap = {'relname':sqltypes.Unicode}
+            )
+        )
+        return [row[0] for row in result]
 
 dialect = PGDialectFdw
