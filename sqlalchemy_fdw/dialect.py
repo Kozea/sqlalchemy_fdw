@@ -1,7 +1,7 @@
 """A custom dialect for handling foreign tables on postgresql"""
 
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
-from sqlalchemy.dialects.postgresql.base import PGDDLCompiler
+from sqlalchemy.dialects.postgresql.base import PGDDLCompiler, ARRAY
 from sqlalchemy.engine import reflection
 from sqlalchemy import sql, types as sqltypes, exc
 from .util import sql_options
@@ -117,5 +117,23 @@ class PGDialectFdw(PGDialect_psycopg2):
             raise exc.NoSuchTableError(table_name)
         return table_oid
 
+    @reflection.cache
+    def get_foreign_table_options(self, connection, fdw_table):
+        oid = self.get_table_oid(connection, fdw_table.name, fdw_table.schema)
+        query = """
+        SELECT ftoptions, srvname
+        FROM pg_foreign_table t inner join pg_foreign_server s
+        ON t.ftserver = s.oid
+        WHERE t.ftrelid = :oid
+        """
+        s = sql.text(query, bindparams=[
+                sql.bindparam('oid', type_=sqltypes.Integer)],
+                type_map={'ftoptions': ARRAY(sqltypes.Unicode),
+                    'srvname': sqltypes.Unicode})
+        c = connection.execute(s, oid=oid)
+        options, srv_name = c.scalar()
+        fdw_table.fdw_server = srv_name
+        fdw_table.fdw_options = dict([option.split('=')
+            for option in options])
 
 dialect = PGDialectFdw

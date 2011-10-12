@@ -65,8 +65,6 @@ class ForeignTable(Table):
 
     def __new__(cls, *args, **kw):
         fdw_server = fdw_server = kw.pop('fdw_server', None)
-        if fdw_server is None:
-            raise KeyError("Foreign Tables need a 'server' kwarg")
         fdw_options = kw.pop('fdw_options', {})
         table = super(ForeignTable, cls).__new__(cls, *args, **kw)
         table.fdw_server = fdw_server
@@ -74,7 +72,25 @@ class ForeignTable(Table):
         return table
 
     def __init__(self, *args, **kwargs):
+        autoload = kwargs.get('autoload', False)
+        autoload_with = kwargs.get('autoload_with', None)
         super(ForeignTable, self).__init__(*args, **kwargs)
+        if autoload:
+            if autoload_with:
+                autoload_with.run_callable(
+                    autoload_with.dialect.get_foreign_table_options,
+                    self)
+            else:
+                bind = _bind_or_error(self.metadata,
+                        msg="No engine is bound to this ForeignTable's"
+                        "MetaData. "
+                        "Pass an engine to the Table via "
+                        "autoload_with=<someengine>, "
+                        "or associate the MetaData with an engine via "
+                        "metadata.bind=<someengine>")
+                bind.run_callable(
+                        bind.dialect.get_foreign_table_options,
+                        self)
         self._prefixes.append('FOREIGN')
 
 
