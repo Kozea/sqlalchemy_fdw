@@ -128,10 +128,10 @@ class PGDialectFdw(PGDialect_psycopg2):
         """
         s = sql.text(query, bindparams=[
                 sql.bindparam('oid', type_=sqltypes.Integer)],
-                type_map={'ftoptions': ARRAY(sqltypes.Unicode),
+                typemap={'ftoptions': ARRAY(sqltypes.Unicode),
                     'srvname': sqltypes.Unicode})
         c = connection.execute(s, oid=oid)
-        options, srv_name = c.scalar()
+        options, srv_name = c.fetchone()
         fdw_table.fdw_server = srv_name
         fdw_table.fdw_options = dict([option.split('=')
             for option in options])

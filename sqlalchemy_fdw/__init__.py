@@ -63,25 +63,19 @@ class ForeignTable(Table):
 
     """
 
-    def __new__(cls, *args, **kw):
-        fdw_server = fdw_server = kw.pop('fdw_server', None)
-        fdw_options = kw.pop('fdw_options', {})
-        table = super(ForeignTable, cls).__new__(cls, *args, **kw)
-        table.fdw_server = fdw_server
-        table.fdw_options = fdw_options
-        return table
-
-    def __init__(self, *args, **kwargs):
+    def __new__(cls, *args, **kwargs):
+        fdw_server = fdw_server = kwargs.pop('fdw_server', None)
+        fdw_options = kwargs.pop('fdw_options', {})
+        table = super(ForeignTable, cls).__new__(cls, *args, **kwargs)
         autoload = kwargs.get('autoload', False)
         autoload_with = kwargs.get('autoload_with', None)
-        super(ForeignTable, self).__init__(*args, **kwargs)
         if autoload:
             if autoload_with:
                 autoload_with.run_callable(
                     autoload_with.dialect.get_foreign_table_options,
-                    self)
+                    table)
             else:
-                bind = _bind_or_error(self.metadata,
+                bind = _bind_or_error(table.metadata,
                         msg="No engine is bound to this ForeignTable's"
                         "MetaData. "
                         "Pass an engine to the Table via "
@@ -90,8 +84,16 @@ class ForeignTable(Table):
                         "metadata.bind=<someengine>")
                 bind.run_callable(
                         bind.dialect.get_foreign_table_options,
-                        self)
-        self._prefixes.append('FOREIGN')
+                        table)
+        table._prefixes.append('FOREIGN')
+        if fdw_server:
+            table.fdw_server = fdw_server
+        if fdw_options:
+            table.fdw_options = fdw_options
+        return table
+
+    def __init__(self, *args, **kwargs):
+        super(ForeignTable, self).__init__(*args, **kwargs)
 
 
 class ForeignDataWrapper(DDLElement):
