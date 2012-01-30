@@ -133,7 +133,7 @@ class PGDialectFdw(PGDialect_psycopg2):
         c = connection.execute(s, oid=oid)
         options, srv_name = c.fetchone()
         fdw_table.fdw_server = srv_name
-        fdw_table.fdw_options = dict([option.split('=')
+        fdw_table.fdw_options = dict([option.split('=', 1)
             for option in options])
 
 dialect = PGDialectFdw
