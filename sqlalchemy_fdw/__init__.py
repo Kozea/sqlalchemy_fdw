@@ -141,7 +141,7 @@ class ForeignDataWrapper(DDLElement):
         if bind is None:
             bind = _bind_or_error(self)
         bindparams = [
-            sql.bindparam('name', unicode(self.name), type_=types.Unicode)]
+            sql.bindparam('name', str(self.name), type_=types.Unicode)]
         cursor = bind.execute(sql.text("select srvname from pg_foreign_server "
                                        "where srvname = :name",
                               bindparams=bindparams))

@@ -6,5 +6,5 @@ def sql_options(options, preparer):
     if options:
         return ' options (%s)' % ','.join(
                      ["%s '%s'" % (preparer.quote_identifier(key), value)
-                        for key, value in options.items()])
+                        for key, value in list(options.items())])
     return ''
