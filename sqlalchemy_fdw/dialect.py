@@ -134,6 +134,6 @@ class PGDialectFdw(PGDialect_psycopg2):
         options, srv_name = c.fetchone()
         fdw_table.fdw_server = srv_name
         fdw_table.fdw_options = dict([option.split('=', 1)
-            for option in options])
+            for option in options]) if options is not None else {}
 
 dialect = PGDialectFdw
