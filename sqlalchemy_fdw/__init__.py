@@ -64,6 +64,10 @@ class ForeignTable(Table):
     """
 
     def __new__(cls, *args, **kwargs):
+        if not args:
+            # python3k pickle seems to call this
+            return object.__new__(cls)
+
         fdw_server = fdw_server = kwargs.pop('fdw_server', None)
         fdw_options = kwargs.pop('fdw_options', {})
         table = super(ForeignTable, cls).__new__(cls, *args, **kwargs)
@@ -91,9 +95,6 @@ class ForeignTable(Table):
         if fdw_options:
             table.fdw_options = fdw_options
         return table
-
-    def __init__(self, *args, **kwargs):
-        super(ForeignTable, self).__init__(*args, **kwargs)
 
 
 class ForeignDataWrapper(DDLElement):
