@@ -9,7 +9,7 @@ from sqlalchemy import sql
 from sqlalchemy import types
 from .util import sql_options
 
-ddl = sqlautil.importlater('sqlalchemy.engine', 'ddl')
+ddl = sqlautil.dependencies._importlater('sqlalchemy.engine', 'ddl')
 
 
 class ForeignTable(Table):
