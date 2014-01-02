@@ -3,7 +3,8 @@
 
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy import util as sqlautil
-from sqlalchemy.schema import DDLElement, Table, _bind_or_error
+from sqlalchemy.schema import DDLElement, Table
+from sqlalchemy.sql.base import _bind_or_error
 from sqlalchemy import sql
 from sqlalchemy import types
 from .util import sql_options
