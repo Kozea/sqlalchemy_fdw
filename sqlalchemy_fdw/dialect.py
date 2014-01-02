@@ -103,14 +103,12 @@ class PGDialectFdw(PGDialect_psycopg2):
         # Since we're binding to unicode, table_name and schema_name must be
         # unicode.
         table_name = str(table_name)
+        bindparams = [sql.bindparam('table_name', type_=sqltypes.Unicode)]
         if schema is not None:
             schema = str(schema)
-        s = sql.text(query, bindparams=[
-            sql.bindparam('table_name', type_=sqltypes.Unicode),
-            sql.bindparam('schema', type_=sqltypes.Unicode)
-            ],
-            typemap={'oid':sqltypes.Integer}
-        )
+            bindparams.append(sql.bindparam('schema', type_=sqltypes.Unicode))
+        s = sql.text(
+            query, bindparams=bindparams, typemap={'oid':sqltypes.Integer})
         c = connection.execute(s, table_name=table_name, schema=schema)
         table_oid = c.scalar()
         if table_oid is None:
