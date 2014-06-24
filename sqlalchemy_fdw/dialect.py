@@ -68,7 +68,7 @@ class PGDialectFdw(PGDialect_psycopg2):
             current_schema = self.default_schema_name
 
         result = connection.execute(
-            sql.text(u"SELECT relname FROM pg_class c "
+            sql.text("SELECT relname FROM pg_class c "
                 "WHERE relkind in ('r', 'f') "
                 "AND '%s' = (select nspname from pg_namespace n "
                 "where n.oid = c.relnamespace) " %
@@ -102,15 +102,13 @@ class PGDialectFdw(PGDialect_psycopg2):
         """ % schema_where_clause
         # Since we're binding to unicode, table_name and schema_name must be
         # unicode.
-        table_name = unicode(table_name)
+        table_name = str(table_name)
+        bindparams = [sql.bindparam('table_name', type_=sqltypes.Unicode)]
         if schema is not None:
-            schema = unicode(schema)
-        s = sql.text(query, bindparams=[
-            sql.bindparam('table_name', type_=sqltypes.Unicode),
-            sql.bindparam('schema', type_=sqltypes.Unicode)
-            ],
-            typemap={'oid':sqltypes.Integer}
-        )
+            schema = str(schema)
+            bindparams.append(sql.bindparam('schema', type_=sqltypes.Unicode))
+        s = sql.text(
+            query, bindparams=bindparams, typemap={'oid':sqltypes.Integer})
         c = connection.execute(s, table_name=table_name, schema=schema)
         table_oid = c.scalar()
         if table_oid is None:
@@ -134,6 +132,6 @@ class PGDialectFdw(PGDialect_psycopg2):
         options, srv_name = c.fetchone()
         fdw_table.fdw_server = srv_name
         fdw_table.fdw_options = dict([option.split('=', 1)
-            for option in options])
+            for option in options]) if options is not None else {}
 
 dialect = PGDialectFdw

@@ -9,7 +9,7 @@ from sqlalchemy import sql
 from sqlalchemy import types
 from .util import sql_options
 
-ddl = sqlautil.importlater('sqlalchemy.engine', 'ddl')
+ddl = sqlautil.dependencies._importlater('sqlalchemy.engine', 'ddl')
 
 
 class ForeignTable(Table):
@@ -65,6 +65,10 @@ class ForeignTable(Table):
     """
 
     def __new__(cls, *args, **kwargs):
+        if not args:
+            # python3k pickle seems to call this
+            return object.__new__(cls)
+
         fdw_server = fdw_server = kwargs.pop('fdw_server', None)
         fdw_options = kwargs.pop('fdw_options', {})
         table = super(ForeignTable, cls).__new__(cls, *args, **kwargs)
@@ -92,9 +96,6 @@ class ForeignTable(Table):
         if fdw_options:
             table.fdw_options = fdw_options
         return table
-
-    def __init__(self, *args, **kwargs):
-        super(ForeignTable, self).__init__(*args, **kwargs)
 
 
 class ForeignDataWrapper(DDLElement):
@@ -142,7 +143,7 @@ class ForeignDataWrapper(DDLElement):
         if bind is None:
             bind = _bind_or_error(self)
         bindparams = [
-            sql.bindparam('name', unicode(self.name), type_=types.Unicode)]
+            sql.bindparam('name', str(self.name), type_=types.Unicode)]
         cursor = bind.execute(sql.text("select srvname from pg_foreign_server "
                                        "where srvname = :name",
                               bindparams=bindparams))
