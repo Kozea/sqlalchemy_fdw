@@ -93,7 +93,7 @@ class ForeignTable(Table):
         table._prefixes.append('FOREIGN')
         if fdw_server:
             table.fdw_server = fdw_server
-        if fdw_options:
+        if fdw_options is not None:
             table.fdw_options = fdw_options
         return table
 
