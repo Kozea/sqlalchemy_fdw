@@ -26,6 +26,10 @@ class PGDDLCompilerFdw(PGDDLCompiler):
         return "DROP %s TABLE %s" % (prefix,
                 self.preparer.format_table(drop.element))
 
+    def create_table_constraints(self, table):
+        # No constraint in foreign tables
+        return ''
+
 
 class PGDialectFdw(PGDialect_psycopg2):
     """An sqldialect based on psyopg2 for managing foreign tables
@@ -98,7 +102,7 @@ class PGDialectFdw(PGDialect_psycopg2):
             FROM pg_catalog.pg_class c
             LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
             WHERE (%s)
-            AND c.relname = :table_name AND c.relkind in ('r','v', 'f')
+            AND c.relname = :table_name AND c.relkind in ('r', 'v', 'f')
         """ % schema_where_clause
         # Since we're binding to unicode, table_name and schema_name must be
         # unicode.
