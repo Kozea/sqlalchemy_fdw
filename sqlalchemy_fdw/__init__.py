@@ -26,7 +26,7 @@ class ForeignTable(Table):
         mytable = ForeignTable("mytable", metadata,
                                Column('id', Integer),
                                Column('name', Unicode),
-                               fdw_server='myserver)
+                               pgfdw_server='myserver)
 
     You can then use it like any table, except:
         - only select statements are supported
@@ -34,9 +34,9 @@ class ForeignTable(Table):
 
     Constructor arguments are the same as :class:`Table`, plus:
 
-    :param: fdw_server: the name of the server this table belongs to.
+    :param: pgfdw_server: the name of the server this table belongs to.
 
-    :param: fdw_options: a dictionary containing the table options.
+    :param: pgfdw_options: a dictionary containing the table options.
 
         These options are passed directly to the foreign table as an OPTIONS
         clause.
@@ -46,8 +46,8 @@ class ForeignTable(Table):
             mytable = ForeignTable("mytable", metadata,
                                    Column('id', Integer),
                                    Column('name', Unicode),
-                                   fdw_server='myserver',
-                                   fdw_options={'option1': 'test'})
+                                   pgfdw_server='myserver',
+                                   pgfdw_options={'option1': 'test'})
 
         Results in the following sql::
 
@@ -69,9 +69,17 @@ class ForeignTable(Table):
             # python3k pickle seems to call this
             return object.__new__(cls)
 
-        fdw_server = fdw_server = kwargs.pop('fdw_server', None)
-        fdw_options = kwargs.pop('fdw_options', {})
         table = super(ForeignTable, cls).__new__(cls, *args, **kwargs)
+        metadata = args[1]
+        table.pgfdw_server = kwargs.pop('pgfdw_server', None)
+        table.pgfdw_options = kwargs.pop('pgfdw_options', None) or {}
+        table._prefixes.append('FOREIGN')
+
+        if not hasattr(metadata, '_foreign_tables'):
+            metadata._foreign_tables = {}
+
+        metadata._foreign_tables[table.key] = table
+
         autoload = kwargs.get('autoload', False)
         autoload_with = kwargs.get('autoload_with', None)
         if autoload:
@@ -80,21 +88,15 @@ class ForeignTable(Table):
                     autoload_with.dialect.get_foreign_table_options,
                     table)
             else:
-                bind = _bind_or_error(table.metadata,
-                        msg="No engine is bound to this ForeignTable's"
-                        "MetaData. "
-                        "Pass an engine to the Table via "
-                        "autoload_with=<someengine>, "
-                        "or associate the MetaData with an engine via "
-                        "metadata.bind=<someengine>")
+                bind = _bind_or_error(
+                    table.metadata,
+                    msg="No engine is bound to this ForeignTable's MetaData. "
+                    "Pass an engine to the Table via "
+                    "autoload_with=<someengine>, "
+                    "or associate the MetaData with an engine via "
+                    "metadata.bind=<someengine>")
                 bind.run_callable(
-                        bind.dialect.get_foreign_table_options,
-                        table)
-        table._prefixes.append('FOREIGN')
-        if fdw_server:
-            table.fdw_server = fdw_server
-        if fdw_options is not None:
-            table.fdw_options = fdw_options
+                    bind.dialect.get_foreign_table_options, table)
         return table
 
 
@@ -121,7 +123,7 @@ class ForeignDataWrapper(DDLElement):
     """
 
     def __init__(self, name, extension_name, metadata=None, bind=None,
-            options=None):
+                 options=None):
         self.name = name
         self.options = options or {}
         self.extension_name = extension_name
@@ -160,8 +162,9 @@ class ForeignDataWrapper(DDLElement):
         if bind is None:
             bind = _bind_or_error(self)
         if not checkfirst or not self.check_existence(bind):
-            CreateForeignDataWrapper(self.name, self.extension_name,
-                bind=bind, options=self.options).execute()
+            CreateForeignDataWrapper(
+                self.name, self.extension_name, bind=bind, options=self.options
+            ).execute()
 
     def drop(self, bind=None, checkfirst=False, cascade=False):
         """Drop the server
@@ -174,8 +177,9 @@ class ForeignDataWrapper(DDLElement):
         if bind is None:
             bind = _bind_or_error(self)
         if not checkfirst or self.check_existence(bind):
-            DropForeignDataWrapper(self.name, self.extension_name,
-                bind=bind, cascade=cascade).execute()
+            DropForeignDataWrapper(
+                self.name, self.extension_name, bind=bind, cascade=cascade
+            ).execute()
 
 
 class CreateForeignDataWrapper(ForeignDataWrapper):
@@ -195,9 +199,10 @@ class DropForeignDataWrapper(ForeignDataWrapper):
 def visit_create_fdw(create, compiler, **kw):
     """Compiler for the create server statement"""
     preparer = compiler.dialect.identifier_preparer
-    statement = ("CREATE server %s foreign data wrapper %s "
-                % (preparer.quote_identifier(create.name),
-                   preparer.quote_identifier(create.extension_name)))
+    statement = (
+        "CREATE server %s foreign data wrapper %s " % (
+            preparer.quote_identifier(create.name),
+            preparer.quote_identifier(create.extension_name)))
     statement += sql_options(create.options, preparer)
     return statement
 

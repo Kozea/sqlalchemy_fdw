@@ -28,8 +28,8 @@ fdw.create()
 table = ForeignTable("myforeigntable", metadata,
             Column('col1', Integer),
             Column('col2', Unicode),
-            fdw_server='myfdwserver',
-            fdw_options={ 
+            pgfdw_server='myfdwserver',
+            pgfdw_options={ 
                 'tableoption': 'optionvalue'
             }
         )
