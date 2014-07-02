@@ -3,7 +3,7 @@
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
 from sqlalchemy.dialects.postgresql.base import PGDDLCompiler, ARRAY
 from sqlalchemy.engine import reflection
-from sqlalchemy.schema import Table
+from sqlalchemy.schema import Table, ForeignKeyConstraint
 from sqlalchemy import sql, types as sqltypes, exc
 from .util import sql_options
 
@@ -36,16 +36,31 @@ class PGDDLCompilerFdw(PGDDLCompiler):
         if is_foreign(table):
             return ''
         else:
-            return super(PGDDLCompilerFdw, self).create_table_constraints(
-                table)
+            constraints = []
+            if table.primary_key:
+                constraints.append(table.primary_key)
 
-    def visit_foreign_key_constraint(self, constraint):
-        # No foreign key in foreign tables
-        if any(map(is_foreign, (constraint.table, constraint.parent))):
-            return ''
-        else:
-            return super(PGDDLCompilerFdw, self).visit_foreign_key_constraint(
-                constraint)
+            constraints.extend([c for c in table._sorted_constraints
+                                if c is not table.primary_key])
+
+            def foreign_foreign_key(constraint):
+                """Return whether this is a foreign key
+                   referencing a foreign table"""
+                return isinstance(
+                    constraint, ForeignKeyConstraint
+                ) and is_foreign(constraint._referred_table)
+
+            return ", \n\t".join(p for p in (
+                self.process(constraint)
+                for constraint in constraints
+                if (
+                    constraint._create_rule is None or
+                    constraint._create_rule(self))
+                and (
+                    not self.dialect.supports_alter or
+                    not getattr(constraint, 'use_alter', False))
+                and not foreign_foreign_key(constraint)
+                ) if p is not None)
 
 
 class PGDialectFdw(PGDialect_psycopg2):
