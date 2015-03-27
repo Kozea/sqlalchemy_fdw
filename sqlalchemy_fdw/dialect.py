@@ -31,7 +31,8 @@ class PGDDLCompilerFdw(PGDDLCompiler):
         return "DROP %s TABLE %s" % (
             prefix, self.preparer.format_table(drop.element))
 
-    def create_table_constraints(self, table):
+    def create_table_constraints(self, table,
+                                 _include_foreign_key_constraints=None):
         # No constraint in foreign tables
         if is_foreign(table):
             return ''
