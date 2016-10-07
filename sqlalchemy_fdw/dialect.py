@@ -162,7 +162,8 @@ class PGDialectFdw(PGDialect_psycopg2):
 
     @reflection.cache
     def get_foreign_table_options(self, connection, pgfdw_table):
-        oid = self.get_table_oid(connection, pgfdw_table.name, pgfdw_table.schema)
+        oid = self.get_table_oid(connection, pgfdw_table.name,
+                                 pgfdw_table.schema)
         query = """
         SELECT ftoptions, srvname
         FROM pg_foreign_table t inner join pg_foreign_server s
