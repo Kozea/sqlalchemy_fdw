@@ -1,7 +1,8 @@
 """A custom dialect for handling foreign tables on postgresql"""
 
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql.psycopg2 import PGDialect_psycopg2
-from sqlalchemy.dialects.postgresql.base import PGDDLCompiler, ARRAY
+from sqlalchemy.dialects.postgresql.base import PGDDLCompiler
 from sqlalchemy.engine import reflection
 from sqlalchemy.schema import Table, ForeignKeyConstraint
 from sqlalchemy import sql, types as sqltypes, exc

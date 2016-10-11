@@ -5,7 +5,7 @@ Installation
 ------------
 ```bash
 
-python setup.py install
+pip install sqlalchemy-fdw
 ```
 
 Usage
@@ -29,7 +29,7 @@ table = ForeignTable("myforeigntable", metadata,
             Column('col1', Integer),
             Column('col2', Unicode),
             pgfdw_server='myfdwserver',
-            pgfdw_options={ 
+            pgfdw_options={
                 'tableoption': 'optionvalue'
             }
         )
