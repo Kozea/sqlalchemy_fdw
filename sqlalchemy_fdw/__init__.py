@@ -73,7 +73,8 @@ class ForeignTable(Table):
         metadata = args[1]
         table.pgfdw_server = kwargs.pop('pgfdw_server', None)
         table.pgfdw_options = kwargs.pop('pgfdw_options', None) or {}
-        table._prefixes.append('FOREIGN')
+        if 'FOREIGN' not in table._prefixes:
+            table._prefixes.append('FOREIGN')
 
         if not hasattr(metadata, '_foreign_tables'):
             metadata._foreign_tables = {}
