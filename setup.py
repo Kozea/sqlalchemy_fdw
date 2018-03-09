@@ -1,10 +1,11 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
+
 setup(
     name='sqlalchemy_fdw',
-    version='0.2.0',
+    version='0.3.0',
     author='Kozea',
     license='BSD',
-    install_requires=['sqlalchemy>=0.9', 'psycopg2'],
+    install_requires=['sqlalchemy>=0.9', 'psycopg2-binary'],
     entry_points={
         'sqlalchemy.dialects': ['pgfdw = sqlalchemy_fdw.dialect:dialect']
     },
