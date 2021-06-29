@@ -100,7 +100,7 @@ class PGDialectFdw(PGDialect_psycopg2):
                     constraint_type = 'PRIMARY KEY'
                     and cu.table_schema = :schema;
         """
-        t = sql.text(PK_SQL, typemap={'attname': sqltypes.Unicode})
+        t = sql.text(PK_SQL).columns(attname=sqltypes.Unicode)
         c = connection.execute(t, table_name=table_name, schema=current_schema)
         primary_keys = [r[0] for r in c.fetchall()]
         return primary_keys
@@ -116,11 +116,9 @@ class PGDialectFdw(PGDialect_psycopg2):
             sql.text(
                 "SELECT relname FROM pg_class c "
                 "WHERE relkind in ('r', 'f') "
-                "AND '%s' = (select nspname from pg_namespace n "
-                "where n.oid = c.relnamespace) " %
-                current_schema,
-                typemap={'relname': sqltypes.Unicode}
-            )
+                f"AND '{current_schema}' = (select nspname from pg_namespace n "
+                "where n.oid = c.relnamespace) "
+            ).columns(relname=sqltypes.Unicode)
         )
         return [row[0] for row in result]
 
@@ -152,8 +150,7 @@ class PGDialectFdw(PGDialect_psycopg2):
         if schema is not None:
             schema = str(schema)
             bindparams.append(sql.bindparam('schema', type_=sqltypes.Unicode))
-        s = sql.text(
-            query, bindparams=bindparams, typemap={'oid': sqltypes.Integer})
+        s = sql.text(query).bindparams(*bindparams).columns(oid=sqltypes.Integer)
         c = connection.execute(s, table_name=table_name, schema=schema)
         table_oid = c.scalar()
         if table_oid is None:
@@ -170,13 +167,9 @@ class PGDialectFdw(PGDialect_psycopg2):
         ON t.ftserver = s.oid
         WHERE t.ftrelid = :oid
         """
-        s = sql.text(
-            query, bindparams=[sql.bindparam('oid', type_=sqltypes.Integer)],
-            typemap={
-                'ftoptions': ARRAY(sqltypes.Unicode),
-                'srvname': sqltypes.Unicode
-            }
-        )
+        s = sql.text(query).bindparams(
+            sql.bindparam('oid', type_=sqltypes.Integer)
+        ).columns(ftoptions=ARRAY(sqltypes.Unicode), srvname=sqltypes.Unicode)
         c = connection.execute(s, oid=oid)
         options, srv_name = c.fetchone()
         pgfdw_table.pgfdw_server = srv_name

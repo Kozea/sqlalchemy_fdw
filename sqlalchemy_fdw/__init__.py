@@ -144,9 +144,11 @@ class ForeignDataWrapper(DDLElement):
             bind = _bind_or_error(self)
         bindparams = [
             sql.bindparam('name', str(self.name), type_=types.Unicode)]
-        cursor = bind.execute(sql.text("select srvname from pg_foreign_server "
-                                       "where srvname = :name",
-                              bindparams=bindparams))
+        cursor = bind.execute(
+            sql.text(
+                "select srvname from pg_foreign_server where srvname = :name"
+            ).bindparams(*bindparams)
+        )
         return bool(cursor.first())
 
     def create(self, bind=None, checkfirst=False):
