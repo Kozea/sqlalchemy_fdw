@@ -1,0 +1,18 @@
+[build-system]
+requires = ['flit_core >=2,<4']
+build-backend = 'flit_core.buildapi'
+
+[project]
+name = 'sqlalchemy_fdw'
+version = '0.3.0'
+description = 'PostgreSQL dialect supporting foreign data wrappers'
+authors = [{name = 'Kozea'}]
+license = {text = 'BSD'}
+requires-python = '>=3.6'
+dependencies = [
+    'sqlalchemy>=1.3',
+    'psycopg2-binary',
+]
+
+[project.entry-points."sqlalchemy.dialects"]
+pgfdw = 'sqlalchemy_fdw.dialect:dialect'
