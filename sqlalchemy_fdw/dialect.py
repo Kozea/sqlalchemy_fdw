@@ -50,7 +50,7 @@ class PGDDLCompilerFdw(PGDDLCompiler):
                    referencing a foreign table"""
                 return isinstance(
                     constraint, ForeignKeyConstraint
-                ) and is_foreign(constraint._referred_table)
+                ) and is_foreign(constraint.referred_table)
 
             return ", \n\t".join(p for p in (
                 self.process(constraint)
