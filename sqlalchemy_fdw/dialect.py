@@ -73,7 +73,7 @@ class PGDialectFdw(PGDialect_psycopg2):
         create_engine('pgfdw://user:password@localhost:5432/dbname')
 
     """
-
+    supports_statement_cache = True
     ddl_compiler = PGDDLCompilerFdw
 
     construct_arguments = [
